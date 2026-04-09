@@ -706,6 +706,46 @@ Quick access:
   cat .planning/audit/SECURITY-BASELINE.md    # Security audit starting point
   cat .planning/audit/TEST-MAP.md             # E2E test planning
   cat .planning/audit/CLEANUP.md              # Dead code to remove
+
+=== What's Next? ===
+
+Choose how to act on these findings:
+
+  1. Fix critical issues
+     "Read GAPS.md and SECURITY-BASELINE.md. Create a GSD milestone
+      to fix the highest priority gaps — security issues first, then
+      broken features, then incomplete implementations."
+     → /gsd-new-milestone
+
+  2. Plan from the full gap list
+     "Read GAPS.md. Group these gaps into logical phases and create
+      a milestone. Prioritize by impact on the health score."
+     → /gsd-new-milestone
+
+  3. Get a recommendation
+     "Read CODEBASE-CONTEXT.md, GAPS.md, and AUDIT-SUMMARY.md.
+      Based on the health score and recommendations, what should
+      we work on next for the biggest impact?"
+
+  4. Security hardening
+     "Read SECURITY-BASELINE.md. Create a milestone to fix every
+      security issue — unprotected endpoints, missing auth, rate
+      limiting gaps, hardcoded credentials."
+     → /gsd-new-milestone
+
+  5. Dead code cleanup
+     "Read CLEANUP.md. Create a quick phase to remove all confirmed
+      dead code, orphan files, and unused exports."
+     → /gsd-quick or /gsd-new-milestone
+
+  6. Plan E2E tests
+     "Read TEST-MAP.md and FEATURES.md. Create a milestone for
+      comprehensive E2E test coverage of all critical user flows."
+     → /gsd-new-milestone
+
+  7. Refactor with confidence
+     "Read DEPENDENCIES.md. I want to refactor [domain]. Show me
+      everything that depends on it and what would break."
 ```
 
 </process>
