@@ -713,11 +713,11 @@ Agent(
 )
 ```
 
-### 10f: HTML Audit Report (all modes)
+### 10f: HTML Audit Report (on request only)
 
-Generate a comprehensive, styled HTML report that the user can open in a browser or print to PDF. This is the human-readable version of the audit — the markdown files are for AI consumption.
+**Do NOT generate this automatically.** Instead, offer it in the "What's Next?" menu after the audit completes. The user can request it by choosing option 8. This saves an agent spawn on every audit where the user doesn't need a shareable report.
 
-Spawn a single agent:
+When requested, spawn a single agent:
 
 ```
 Agent(
@@ -736,79 +736,161 @@ Agent(
 
   WRITE TO: .planning/audit/AUDIT-REPORT.html
 
+  This report must be enterprise-grade — the kind of deliverable a professional
+  software audit firm would produce. It will be shared with CTOs, investors,
+  and engineering leadership. Every finding must have evidence, a recommended
+  fix, and an effort estimate.
+
   REQUIREMENTS:
   - Single self-contained HTML file — all CSS embedded in <style>, no external dependencies except Mermaid CDN for diagrams
-  - Professional, clean design — dark header, white content, good typography
-  - Print-friendly — Cmd+P should produce a clean PDF
+  - Professional, clean design — dark header (#1a1a2e), white content, excellent typography
+  - Print-friendly — Cmd+P should produce a clean, paginated PDF
+  - Table of contents with anchor links
+  - Page numbers in print mode (@page CSS)
 
   STRUCTURE:
 
-  1. HEADER SECTION
-     - Project name, date, coverage percentage
+  1. COVER / HEADER
+     - Title: "Codebase Audit Report"
+     - Project name, audit date, audit mode (Full/Standard/Quick)
+     - Coverage percentage badge
      - Stack badges (React, TypeScript, etc.)
-     - Health score as colored gauge/bar (red <4, amber 4-6, green 7+)
-     - Key stats row: files, LOC, domains, integrations, endpoints
+     - Prepared by: Power Mapper (automated audit)
 
-  2. HEALTH SCORES DASHBOARD
-     - 5 dimension scores as colored bars with labels
-     - Overall score prominent
+  2. TABLE OF CONTENTS
+     - Clickable links to every section
+     - Include issue counts per section
 
-  3. CRITICAL ISSUES (red section, always visible)
-     - Broken user flows with CRITICAL badges
-     - Each with domain, description, evidence
+  3. EXECUTIVE SUMMARY (1 page — for C-level readers)
+     - 3-4 sentence overview of what the project is and its current state
+     - Health score as large colored gauge (red <4, amber 4-6, green 7+)
+     - 5 dimension scores as horizontal colored bars
+     - Key stats row: files, LOC, domains, integrations, endpoints, bugs found
+     - Single paragraph: top recommendation and why it matters
+     - Verdict: "Launch Ready" / "Needs Work" / "Not Launch Ready" with colored badge
 
-  4. CONFIRMED BUGS TABLE
-     - Sortable-looking table: #, Severity badge (red/amber/yellow), Domain, Bug, Impact
-     - Color-coded severity badges
+  4. RISK REGISTER (the core deliverable)
+     Full table of every issue found. This is what enterprise clients pay for.
 
-  5. RISKS BY CATEGORY (collapsible sections using <details>)
-     - Security Risks (with count badge)
-     - UX & Flow Risks (with count badge)
-     - Infrastructure Risks (with count badge)
-     - Code Quality Risks (with count badge)
+     Table columns:
+     | ID | Severity | Category | Domain | Finding | Evidence | Recommended Fix | Effort | Priority |
 
-  6. FEATURE MAP
-     - Organized by user role
-     - Each role in a collapsible <details> section
-     - Features listed with domain and route
+     - ID: sequential (RISK-001, RISK-002, etc.)
+     - Severity: CRITICAL (red) / HIGH (amber) / MEDIUM (yellow) / LOW (green)
+     - Category: Security / UX Flow / Infrastructure / Code Quality / Data / Performance
+     - Domain: which feature domain this affects
+     - Finding: clear description of the issue
+     - Evidence: specific file paths, line references, or behavioral description from the audit data
+     - Recommended Fix: specific, actionable remediation steps. NOT vague ("add security").
+       Good: "Add @upstash/ratelimit to POST /api/auth/login — 5 req/min per IP, return 429 with Retry-After header"
+       Good: "Replace base64 file storage in postgres with Supabase Storage buckets — migrate existing files via background job"
+       Good: "Consolidate onboarding to single flow (Assembly), remove BriefingRoom (~3,000 LOC), add mid-flow resume via localStorage checkpoint"
+     - Effort: S (hours) / M (1-2 days) / L (3-5 days) / XL (1+ weeks)
+     - Priority: P0 (fix before launch) / P1 (fix soon) / P2 (plan for next sprint) / P3 (backlog)
 
-  7. DOMAIN OVERVIEW TABLE
-     - Domain | Status | LOC | Key Capabilities | Issues
-     - Status as colored badge (complete/partial/stub)
+     Group the table by severity (CRITICAL first, then HIGH, etc.)
+     Include a summary row at the top: "X critical, Y high, Z medium, W low"
 
-  8. DEPENDENCY GRAPH
-     - Include Mermaid diagram if DEPENDENCIES.md exists
-     - Add <script src='https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js'></script>
-     - Impact analysis highlights
+  5. CRITICAL ISSUES DETAIL (expanded view of CRITICAL/HIGH items)
+     For each CRITICAL and HIGH severity issue, a detailed card with:
+     - Issue title and ID
+     - Full description of what's wrong
+     - Why it matters (user impact, security risk, data risk)
+     - Step-by-step remediation plan (numbered steps)
+     - Files likely affected (from domain summaries)
+     - Definition of done (how to verify the fix)
 
-  9. SECURITY BASELINE (if exists)
-     - Auth flow summary
-     - Unprotected routes table
+  6. SECURITY ASSESSMENT
+     - Authentication flow diagram (text-based if no Mermaid data)
+     - Authorization model: which roles can access what
+     - Unprotected routes table (route, method, what it exposes)
      - Endpoints missing rate limiting
+     - Credential management assessment
+     - Session management assessment
+     - OWASP Top 10 mapping: for each OWASP category, state whether
+       the codebase has exposure and which risk register items relate
+       (A01:Broken Access Control, A02:Cryptographic Failures, A03:Injection,
+       A04:Insecure Design, A05:Security Misconfiguration, A06:Vulnerable Components,
+       A07:Auth Failures, A08:Data Integrity, A09:Logging Failures, A10:SSRF)
 
-  10. RECOMMENDATIONS
-      - Prioritized list: immediate / short-term / medium-term
-      - Each with expected impact on health score
+  7. FEATURE COMPLETENESS MAP
+     - Table by domain: Domain | Status | LOC | Features Built | Features Missing | Issues
+     - Status as colored badge (complete/partial/stub/broken)
+     - Expandable details per domain showing full feature list by user role
 
-  11. FOOTER
-      - Generated by Power Mapper
-      - Date, coverage, mode
+  8. DEPENDENCY & ARCHITECTURE
+     - Mermaid diagram if DEPENDENCIES.md exists
+       <script src='https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js'></script>
+     - Coupling analysis: which domains are tightly coupled
+     - Impact analysis: top 5 highest-impact domains (most depended upon)
+     - Architecture concerns from the audit
+
+  9. CODE QUALITY ASSESSMENT
+     - Dead code inventory (files, estimated LOC)
+     - Duplication hotspots
+     - Type safety issues
+     - Performance concerns (N+1 queries, memory leaks, etc.)
+     - Test coverage assessment
+
+  10. REMEDIATION ROADMAP
+      Three-phase plan derived from the risk register:
+
+      Phase 1: Immediate (P0 items — before launch)
+      - List each item with effort estimate
+      - Total estimated effort for Phase 1
+
+      Phase 2: Short-term (P1 items — next 2 sprints)
+      - List each item with effort estimate
+      - Total estimated effort for Phase 2
+
+      Phase 3: Medium-term (P2 items — next quarter)
+      - List each item with effort estimate
+      - Total estimated effort for Phase 3
+
+      Backlog: (P3 items)
+      - Brief list, no detail needed
+
+      Include a summary: "Total remediation effort: ~X person-days across Y issues"
+
+  11. APPENDIX
+      - Full domain inventory table (all domains with LOC, file count, status)
+      - External integrations table (service, purpose, auth method, status)
+      - Environment variables referenced
+      - Large files list (>500 LOC)
+      - Audit methodology: explain the 6-tier MapReduce process briefly
+
+  12. FOOTER
+      - Generated by Power Mapper — https://github.com/richyparr/power-mapper
+      - Audit date, coverage percentage, mode, agent count
+      - "This report was generated by automated static analysis. Findings should
+         be verified by manual review before acting on security-critical items."
 
   STYLING GUIDELINES:
-  - Font: system-ui, -apple-system, sans-serif
-  - Header: dark background (#1a1a2e or similar), white text
-  - Severity badges: red (#dc2626) for critical, amber (#f59e0b) for high, yellow (#eab308) for medium, green (#22c55e) for low/complete
-  - Health bars: colored gradient based on score
-  - Tables: alternating row colors, hover highlight
-  - Cards with subtle shadow for each section
-  - Responsive — looks good at any width
-  - <details> elements for collapsible sections to keep it scannable
-  - Good use of whitespace — not cramped
+  - Font: system-ui, -apple-system, 'Segoe UI', sans-serif
+  - Header: dark background (#1a1a2e), white text, subtle gradient
+  - Section headers: left-bordered with colored accent (blue for info, red for critical)
+  - Severity badges: inline-block, rounded, colored background
+    - CRITICAL: #dc2626 bg, white text
+    - HIGH: #f59e0b bg, black text
+    - MEDIUM: #eab308 bg, black text
+    - LOW: #22c55e bg, white text
+  - Effort badges: gray outline, small
+  - Priority badges: dark bg with colored left border
+  - Health bars: CSS gradient based on score value
+  - Tables: alternating row colors (#f9fafb / white), hover highlight, sticky headers
+  - Cards: white bg, subtle shadow (0 1px 3px rgba(0,0,0,0.1)), rounded corners
+  - Responsive — max-width: 1200px, centered, looks good at any width
+  - <details> elements for collapsible sections — open by default for critical items
+  - Print styles: hide navigation, force page-break-before on major sections
+  - Good use of whitespace — generous padding, not cramped
+  - Risk register table should be the visual centerpiece — prominent, well-formatted
 
-  The report should look like something you'd present to a CTO or investor,
-  not a raw data dump. Make it scannable — someone should understand the
-  health of the codebase in 30 seconds from the dashboard, then drill into
-  details as needed."
+  TONE:
+  - Professional and objective — this is a technical assessment, not a sales pitch
+  - Findings are stated as facts with evidence, not opinions
+  - Recommendations are specific and actionable
+  - Severity ratings are justified by impact, not inflated for drama
+  - Acknowledge what's done well — the strengths section matters for credibility"
 )
 ```
 
@@ -982,6 +1064,12 @@ Choose how to act on these findings:
   7. Refactor with confidence
      "Read DEPENDENCIES.md. I want to refactor [domain]. Show me
       everything that depends on it and what would break."
+
+  8. Generate enterprise audit report
+     "Generate the HTML audit report from Step 10f. I need a
+      shareable report with risk register, OWASP mapping,
+      remediation roadmap, and recommended fixes."
+     → Opens in browser, print to PDF
 ```
 
 </process>
