@@ -388,13 +388,39 @@ Rate 1-10 on each dimension:
 - Documentation: X/10
 - Overall: X/10
 
+## Critical Issues — Broken User Flows
+IMPORTANT: If ANY core user flow is broken (onboarding, signup, login, checkout, payment, invitation), it MUST appear here regardless of other priorities. Broken user flows block everything.
+
+For each broken flow:
+- **Flow name** — what's broken and why it matters
+- Severity: CRITICAL / HIGH
+- Domain: which domain this belongs to
+- Evidence: specific files, error conditions, or missing steps
+
+## Confirmed Bugs
+List every confirmed bug found across all domains. Table format:
+
+| # | Severity | Domain | Bug | Impact |
+|---|----------|--------|-----|--------|
+
+## Risks by Category
+
+### Security Risks
+[All security issues — auth gaps, unprotected endpoints, credential exposure, rate limiting, session management]
+
+### UX & Flow Risks
+[Broken user journeys, confusing navigation, incomplete wizards, dead-end pages]
+
+### Infrastructure Risks
+[No CI/CD, no error monitoring, scaling bottlenecks, missing backups, deployment gaps]
+
+### Code Quality Risks
+[Dead code, duplication, type safety issues, N+1 queries, memory leaks]
+
 ## Key Strengths
 [Top 5 things done well]
 
-## Key Risks
-[Top 5 things that need attention]
-
 ## Recommendations
-[Top 5 actionable next steps, prioritized]
+[Top 10 actionable next steps, prioritized by impact. Group into immediate/short-term/medium-term]
 ```
 </tier5_prompt>
