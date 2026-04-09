@@ -99,24 +99,14 @@ cp -r power-mapper/ ~/.claude/skills/power-mapper/
 /power-mapper
 ```
 
-Choose **Full audit** for your first run. You'll see:
+You'll be prompted to choose a mode and audit type:
 
 ```
-Inventory complete.
-- Total files: 847
-- Total LOC: 94,231
-- Detected stack: React, TypeScript, Supabase, Tailwind
-- Feature domains: 18
+What level of audit would you like?
 
-Chunk plan ready.
-- Tier 2 agents: 12 (file analysis)
-- Tier 3 agents: 10 (domain synthesis)
-- Tier 4 agents: 5 (thematic cross-cuts)
-- Tier 5 agent: 1 (executive synthesis)
-- Total agents: 28
-- Estimated time: ~15 minutes
-
-Proceed?
+1. Full     — All tiers, all derivatives (max insight, max tokens)
+2. Standard — Skip thematic cross-cuts, fewer derivatives (balanced)
+3. Quick    — File analysis → executive summary (fast, small codebases only)
 ```
 
 After completion, start with:
@@ -126,23 +116,97 @@ cat .planning/audit/FEATURES.md      # Full feature map
 cat .planning/audit/GAPS.md          # What's missing
 ```
 
-## How It Scales
+## Audit Modes
+
+Power Mapper offers three modes to balance insight against token cost.
+
+### Full Mode
+
+Runs all 6 tiers plus all derivative outputs. This is the most thorough option.
+
+**Tiers:** Inventory → File Analysis → Domain Synthesis → 5 Thematic Cross-Cuts → Executive Synthesis → Verification
+
+**What you get that other modes don't:**
+- **Auth Flow report** — Route-by-role access matrix, unprotected routes, MFA audit, session management
+- **API Surface report** — Complete endpoint table with auth, rate limiting, and validation status per endpoint
+- **Integration Audit** — Per-service error handling, retry logic, timeouts, credential storage
+- **Automation Map** — Cron jobs, webhooks, background workers, realtime subscriptions
+- **Dead Code report** — Orphan files, unused exports, abandoned features, unreachable routes
+- **SECURITY-BASELINE.md, TEST-MAP.md, CLEANUP.md** — Derivatives that depend on thematic reports
+
+**Use when:** First audit of any codebase, security reviews, compliance audits, due diligence, after major architectural changes.
+
+### Standard Mode
+
+Skips Tier 4 (the 5 thematic cross-cut agents). Tier 5 still runs but derives cross-cutting insights from domain summaries alone, which is less thorough.
+
+**Tiers:** Inventory → File Analysis → Domain Synthesis → Executive Synthesis → Verification
+
+**What you keep:** FEATURES.md, GAPS.md, AUDIT-SUMMARY.md, CODEBASE-CONTEXT.md, DEPENDENCIES.md — all at the same quality for feature mapping and gap identification.
+
+**What you lose:** The dedicated auth trace, API surface map, integration audit, automation map, and dead code inventory. The Tier 5 executive agent can still spot issues mentioned in domain summaries (e.g., "billing has no rate limiting"), but it won't systematically trace auth across every route or audit every external service integration. Health scores will be less informed, particularly on security posture and code quality.
+
+**Use when:** Follow-up audits after an initial Full audit, internal tools where security isn't the primary concern, when you mainly need the feature map and gaps, or when token budget is tight.
+
+### Quick Mode
+
+Skips both Tier 3 (domain synthesis) and Tier 4 (thematic cross-cuts). Tier 2 chunk analyses go directly to a single Tier 5 executive agent.
+
+**Tiers:** Inventory → File Analysis → Executive Synthesis → Verification
+
+**Limitation: <100K LOC only.** Above 100K LOC, the combined Tier 2 output won't fit in one agent's context and you'll get a shallow or truncated summary. Power Mapper will warn you and recommend Standard or Full.
+
+**What you keep:** FEATURES.md, GAPS.md, AUDIT-SUMMARY.md, CODEBASE-CONTEXT.md.
+
+**What you lose:** Domain summaries, all thematic reports, DEPENDENCIES.md, SECURITY-BASELINE.md, TEST-MAP.md, CLEANUP.md.
+
+**Use when:** Small codebases, quick overview before deciding whether to run a full audit, prototypes.
+
+### Mode Comparison
+
+| | Full | Standard | Quick |
+|---|---|---|---|
+| **Tiers** | 1-6 | 1-3, 5-6 | 1-2, 5-6 |
+| **Agents (100K LOC)** | ~20 | ~14 | ~8 |
+| **Token cost** | High | Medium | Low |
+| **Codebase limit** | 1M+ LOC | 1M+ LOC | <100K LOC |
+| FEATURES.md | Yes | Yes | Yes |
+| GAPS.md | Yes | Yes | Yes |
+| AUDIT-SUMMARY.md | Yes | Yes (less informed) | Yes (least informed) |
+| Domain summaries | Yes | Yes | No |
+| Auth/API/Integration reports | Yes | No | No |
+| Dead code inventory | Yes | No | No |
+| CODEBASE-CONTEXT.md | Yes | Yes | Yes |
+| DEPENDENCIES.md | Yes | Yes | No |
+| SECURITY-BASELINE.md | Yes | No | No |
+| TEST-MAP.md | Yes | No | No |
+| CLEANUP.md | Yes | No | No |
+
+### Recommended workflow
+
+1. **First audit:** Run **Full** to get the complete picture
+2. **After major changes:** Run **Standard** incremental — you already have the security baseline from the first audit
+3. **Quick check on a small project:** Run **Quick** to decide if a deeper audit is worth it
+
+## How It Scales (Full Mode)
 
 | Codebase | Tier 2 Agents | Tier 3 Agents | Total Agents | Est. Time |
 |----------|--------------|---------------|-------------|-----------|
-| 10K LOC  | 2-3          | 3-5           | ~12         | 5 min     |
-| 50K LOC  | 5-8          | 6-10          | ~20         | 10 min    |
-| 100K LOC | 10-15        | 8-12          | ~30         | 15 min    |
-| 200K LOC | 15-25        | 10-12         | ~45         | 20 min    |
-| 500K LOC | 35-60        | 10-12         | ~80         | 30 min    |
-| 1M LOC   | 70-125       | 10-12         | ~145        | 45 min    |
+| 10K LOC  | 1-2          | 3-5           | ~10         | 5 min     |
+| 50K LOC  | 2-4          | 6-10          | ~15         | 8 min     |
+| 100K LOC | 4-6          | 8-12          | ~20         | 12 min    |
+| 200K LOC | 8-12         | 10-12         | ~30         | 15 min    |
+| 500K LOC | 20-30        | 10-12         | ~50         | 25 min    |
+| 1M LOC   | 40-50        | 10-12         | ~70         | 35 min    |
 
-Tier 3 is capped at **max 12 agents** regardless of codebase size. Small domains are automatically merged. This is the single most important optimization — each spawned agent carries ~25-30K tokens of system overhead.
+Tier 3 is capped at **max 12 agents** regardless of codebase size. Small domains are automatically merged. Tier 2 uses 25K-line chunks (~100K tokens each) to minimize agent count while staying within Sonnet's context window.
 
 ## Token Cost Tips
 
 Power Mapper is token-intensive. These optimizations are built in:
 
+- **Audit modes** — Standard saves ~30% vs Full; Quick saves ~60%
+- **25K-line chunks** — Fewer, larger Tier 2 chunks = fewer agents = less system prompt overhead
 - **Domain merging** — Tier 3 auto-merges small domains to stay under 12 agents
 - **Quality validation** — Catches shallow Tier 2 analyses before they waste downstream tokens
 - **Incremental mode** — After the first audit, only re-analyze what git says changed
@@ -158,11 +222,11 @@ Power Mapper is token-intensive. These optimizations are built in:
 
 ## Incremental Mode
 
-After the first full audit, use incremental mode to stay current:
+After the first audit, use incremental mode to stay current:
 
 ```
 /power-mapper
-> Choose: 2 (Incremental audit)
+> Choose: 4 (Incremental audit)
 ```
 
 It diffs against the git hash stored in `STATE.json`, re-analyzes only changed chunks, and produces a `CHANGES-SINCE-LAST-AUDIT.md` showing what's different. Token cost scales with how much changed, not total codebase size.
