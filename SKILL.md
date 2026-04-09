@@ -128,13 +128,26 @@ Checking for previous audit...
 
 **If `.planning/audit/inventory/all_files.tsv` exists:**
 
-A previous audit exists. What would you like to do?
+A previous audit exists. Check STATE.json for the mode of the previous audit.
 
-1. **Full audit** — All tiers, all derivatives (max insight, max tokens)
-2. **Standard audit** — Skip thematic cross-cuts, fewer derivatives (balanced)
-3. **Quick audit** — File analysis → executive summary (fast, small codebases only)
-4. **Incremental audit** — Only re-analyze files changed since last audit
+**If previous mode was `standard` or `quick`:**
+
+A {previous_mode} audit exists. What would you like to do?
+
+1. **Upgrade to Full** — Run the skipped tiers on top of existing data (no re-analysis needed)
+2. **Incremental audit** — Only re-analyze files changed since last audit
+3. **Fresh Full audit** — Delete existing and re-audit everything from scratch
+4. **Fresh Standard audit** — Delete existing and re-audit (skip thematic cross-cuts)
 5. **Resume** — Continue an interrupted audit from where it stopped
+
+**If previous mode was `full`:**
+
+A full audit already exists. What would you like to do?
+
+1. **Incremental audit** — Only re-analyze files changed since last audit
+2. **Fresh Full audit** — Delete existing and re-audit everything from scratch
+3. **Fresh Standard audit** — Delete existing and re-audit (skip thematic cross-cuts)
+4. **Resume** — Continue an interrupted audit from where it stopped
 
 **If no previous audit exists:**
 
@@ -150,11 +163,17 @@ What level of audit would you like?
 
 | Response | Workflow | Mode flag |
 |----------|----------|-----------|
-| 1, "full", "complete" | `workflows/full-audit.md` | `mode=full` |
-| 2, "standard", "balanced" | `workflows/full-audit.md` | `mode=standard` |
-| 3, "quick", "fast", "light" | `workflows/full-audit.md` | `mode=quick` |
-| 4, "incremental", "update", "diff", "changed" | `workflows/incremental-audit.md` | (inherits mode from previous audit) |
-| 5, "resume", "continue" | `workflows/full-audit.md` | (resume flag + previous mode) |
+| "full", "complete" (new) | `workflows/full-audit.md` | `mode=full` |
+| "standard", "balanced" (new) | `workflows/full-audit.md` | `mode=standard` |
+| "quick", "fast", "light" (new) | `workflows/full-audit.md` | `mode=quick` |
+| "upgrade" (from standard/quick) | `workflows/full-audit.md` | `mode=upgrade` |
+| "incremental", "update", "diff" | `workflows/incremental-audit.md` | (inherits mode from previous audit) |
+| "resume", "continue" | `workflows/full-audit.md` | (resume flag + previous mode) |
+
+**Upgrade mode:** Skip Tiers 1-3 (already done). Start at the first tier that was skipped:
+- Upgrading from Standard → run Tier 4, then re-run Tier 5 (with thematic input), then generate missing derivatives
+- Upgrading from Quick → run Tier 3, then Tier 4, then re-run Tier 5, then generate missing derivatives
+Do NOT re-run Tier 1, 2, or any tier that already has output files. Do NOT delete existing data.
 
 **After reading the workflow, follow it exactly. Pass the mode flag to control which tiers execute.**
 
