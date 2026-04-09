@@ -113,6 +113,16 @@ After a complete audit, `.planning/audit/` contains:
 
 </output_structure>
 
+<audit_modes>
+
+| Mode | Tiers | What you get | Token cost | Best for |
+|------|-------|-------------|------------|----------|
+| **Full** | 1-6 + all derivatives | Everything: domain summaries, 5 thematic reports, dependency graph, security baseline, test map, cleanup targets | High | First audit, security review, due diligence, large codebases |
+| **Standard** | 1-3, 5-6 + limited derivatives | FEATURES.md, GAPS.md, AUDIT-SUMMARY.md, CODEBASE-CONTEXT.md, DEPENDENCIES.md. No thematic cross-cuts. | Medium | Regular audits, incremental updates, most use cases |
+| **Quick** | 1-2, 5-6 + CODEBASE-CONTEXT only | FEATURES.md, GAPS.md, AUDIT-SUMMARY.md, CODEBASE-CONTEXT.md. No domain summaries, no themes. | Low | Small codebases (<100K LOC), quick overview |
+
+</audit_modes>
+
 <intake>
 Checking for previous audit...
 
@@ -120,24 +130,33 @@ Checking for previous audit...
 
 A previous audit exists. What would you like to do?
 
-1. **Full audit** — Delete existing and re-audit the entire codebase
-2. **Incremental audit** — Only re-analyze files changed since last audit
-3. **Resume** — Continue an interrupted audit from where it stopped
+1. **Full audit** — All tiers, all derivatives (max insight, max tokens)
+2. **Standard audit** — Skip thematic cross-cuts, fewer derivatives (balanced)
+3. **Quick audit** — File analysis → executive summary (fast, small codebases only)
+4. **Incremental audit** — Only re-analyze files changed since last audit
+5. **Resume** — Continue an interrupted audit from where it stopped
 
 **If no previous audit exists:**
 
-Starting full codebase audit. → Route directly to `workflows/full-audit.md`
+What level of audit would you like?
+
+1. **Full** — All tiers, all derivatives (max insight, max tokens)
+2. **Standard** — Skip thematic cross-cuts, fewer derivatives (balanced)
+3. **Quick** — File analysis → executive summary (fast, small codebases only)
+
 </intake>
 
 <routing>
 
-| Response | Workflow |
-|----------|----------|
-| 1, "full", "fresh", "complete", no previous audit | `workflows/full-audit.md` |
-| 2, "incremental", "update", "diff", "changed" | `workflows/incremental-audit.md` |
-| 3, "resume", "continue" | `workflows/full-audit.md` (with resume flag) |
+| Response | Workflow | Mode flag |
+|----------|----------|-----------|
+| 1, "full", "complete" | `workflows/full-audit.md` | `mode=full` |
+| 2, "standard", "balanced" | `workflows/full-audit.md` | `mode=standard` |
+| 3, "quick", "fast", "light" | `workflows/full-audit.md` | `mode=quick` |
+| 4, "incremental", "update", "diff", "changed" | `workflows/incremental-audit.md` | (inherits mode from previous audit) |
+| 5, "resume", "continue" | `workflows/full-audit.md` | (resume flag + previous mode) |
 
-**After reading the workflow, follow it exactly.**
+**After reading the workflow, follow it exactly. Pass the mode flag to control which tiers execute.**
 
 </routing>
 
@@ -152,7 +171,7 @@ Starting full codebase audit. → Route directly to `workflows/full-audit.md`
 
 | Workflow | Purpose |
 |----------|---------|
-| full-audit.md | Complete Tier 1-6 audit from scratch |
+| full-audit.md | Complete audit (supports full/standard/quick modes) |
 | incremental-audit.md | Re-audit only files changed since last audit |
 
 </workflows_index>

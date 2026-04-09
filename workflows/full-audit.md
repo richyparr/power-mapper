@@ -60,7 +60,31 @@ Inventory complete.
 - Large files (>500 LOC): {N}
 - External integrations: {N}
 - AI/ML files: {N}
+```
 
+### Quick mode LOC check
+
+**If mode is `quick` and total LOC > 100,000:**
+
+```
+⚠ This codebase has {N} LOC — too large for Quick mode.
+
+Quick mode skips domain synthesis (Tier 3) and sends all Tier 2 chunk
+analyses directly to a single executive agent. With >100K LOC, the
+combined chunk analyses won't fit in one agent's context window, and
+you'll get a shallow or truncated summary.
+
+Recommended alternatives:
+  - Standard mode — skips thematic cross-cuts but keeps domain synthesis.
+    Good balance of insight vs. token cost.
+  - Full mode — all tiers, all derivatives. Maximum insight.
+
+Switch to Standard or Full? (or proceed with Quick anyway)
+```
+
+Wait for user response. If they choose to proceed with Quick anyway, continue but note the risk.
+
+```
 Proceeding to chunk planning...
 ```
 
@@ -233,6 +257,8 @@ done
 
 ## Step 5: Execute Tier 3 — Domain Synthesis
 
+**⏭ SKIP this step if mode is `quick`.** In Quick mode, Tier 2 chunk analyses go directly to Tier 5 executive synthesis. Jump to Step 7.
+
 **Target: max 12 Tier 3 agents.** Each agent spawn costs ~30-50K tokens in system overhead regardless of task complexity. Reducing agent count is the single most effective way to control token usage.
 
 ### Step 5a: Identify domains and their sizes
@@ -338,6 +364,8 @@ Run in waves of 4. After completion, verify all domain files exist.
 
 ## Step 6: Execute Tier 4 — Thematic Cross-Cuts
 
+**⏭ SKIP this step if mode is `quick` or `standard`.** Jump to Step 7. Tier 5 will derive cross-cutting insights directly from domain summaries (standard) or chunk analyses (quick).
+
 Spawn 5 thematic agents IN PARALLEL (single wave). Read prompts from `references/agent-prompts.md` (TIER 4 section).
 
 **Agents:**
@@ -367,15 +395,25 @@ Wait for all 5 to complete.
 
 ## Step 7: Execute Tier 5 — Executive Synthesis
 
-Spawn a SINGLE opus-level agent that reads all Tier 3 domain summaries and Tier 4 thematic reports.
+Spawn a SINGLE opus-level agent. **What it reads depends on the audit mode:**
+
+**Full mode:** Reads domain summaries (Tier 3) + thematic reports (Tier 4)
+**Standard mode:** Reads domain summaries (Tier 3) only — no thematic reports exist
+**Quick mode:** Reads chunk analyses (Tier 2) directly — no domain summaries or themes exist
 
 **Token budget check:** Before spawning, verify total input size:
 ```bash
+# Full mode:
 wc -l .planning/audit/domains/*.md .planning/audit/themes/*.md 2>/dev/null | tail -1
+# Standard mode:
+wc -l .planning/audit/domains/*.md 2>/dev/null | tail -1
+# Quick mode:
+wc -l .planning/audit/files/*.md 2>/dev/null | tail -1
 ```
 
-If total exceeds 4000 lines (~16K tokens), the synthesis agent can handle it — domain summaries + thematic reports compress well. If it exceeds 10,000 lines, consider splitting into two synthesis passes.
+If total exceeds 10,000 lines, consider splitting into two synthesis passes (unlikely for standard/full; possible for quick mode on larger codebases).
 
+**Full mode agent:**
 ```
 Agent(
   description="Executive synthesis",
@@ -386,6 +424,50 @@ Agent(
   READ: All .planning/audit/themes/*.md files
   READ: .planning/audit/inventory/summary.txt
   READ: .planning/audit/inventory/large_files.tsv
+  
+  WRITE:
+  - .planning/audit/FEATURES.md — Complete product capability map by user role
+  - .planning/audit/GAPS.md — Stubs, TODOs, incomplete features, dead routes
+  - .planning/audit/AUDIT-SUMMARY.md — Health score, stats, key findings"
+)
+```
+
+**Standard mode agent:**
+```
+Agent(
+  description="Executive synthesis (standard)",
+  model="opus",
+  prompt="[Tier 5 prompt from references/agent-prompts.md]
+  
+  READ: All .planning/audit/domains/*.md files
+  READ: .planning/audit/inventory/summary.txt
+  READ: .planning/audit/inventory/large_files.tsv
+  
+  NOTE: No thematic cross-cut reports are available in this mode.
+  Derive cross-cutting insights (auth patterns, API surface, integrations,
+  dead code indicators) directly from the domain summaries where possible.
+  
+  WRITE:
+  - .planning/audit/FEATURES.md — Complete product capability map by user role
+  - .planning/audit/GAPS.md — Stubs, TODOs, incomplete features, dead routes
+  - .planning/audit/AUDIT-SUMMARY.md — Health score, stats, key findings"
+)
+```
+
+**Quick mode agent:**
+```
+Agent(
+  description="Executive synthesis (quick)",
+  model="opus",
+  prompt="[Tier 5 prompt from references/agent-prompts.md]
+  
+  READ: All .planning/audit/files/chunk-*.md files
+  READ: .planning/audit/inventory/summary.txt
+  READ: .planning/audit/inventory/large_files.tsv
+  
+  NOTE: You are reading file-level chunk analyses directly — there are no
+  domain summaries or thematic reports. Synthesize the product capability
+  map, gaps, and audit summary directly from these per-file analyses.
   
   WRITE:
   - .planning/audit/FEATURES.md — Complete product capability map by user role
@@ -436,6 +518,19 @@ If secrets found, warn user and pause before committing.
 ## Step 10: Generate Derivative Outputs
 
 The audit data is expensive to produce. Extract maximum value by generating files that other tools consume automatically.
+
+**Which derivatives to generate by mode:**
+
+| Derivative | Full | Standard | Quick |
+|-----------|------|----------|-------|
+| 10a: CODEBASE-CONTEXT.md | Yes | Yes | Yes |
+| 10b: SECURITY-BASELINE.md | Yes | No (requires Tier 4 themes) | No |
+| 10c: TEST-MAP.md | Yes | No (requires Tier 4 themes) | No |
+| 10d: CLEANUP.md | Yes | No (requires Tier 4 themes) | No |
+| 10e: DEPENDENCIES.md | Yes | Yes (reads domain summaries) | No (no domains) |
+| 10f: Finalize State | Yes | Yes | Yes |
+
+**Skip derivatives marked "No" for the current mode.**
 
 ### 10a: CODEBASE-CONTEXT.md (for GSD + Claude Code)
 
