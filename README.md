@@ -183,6 +183,8 @@ If you use the [GSD plugin](https://github.com/glittercowboy/get-shit-done), Pow
 
 ## Architecture
 
+For a comprehensive technical deep-dive into every tier, every agent, wave execution, the compression pyramid, and what makes this approach powerful, see **[ARCHITECTURE.md](ARCHITECTURE.md)**.
+
 ```
 power-mapper/
 +-- SKILL.md                        # Skill entry point
