@@ -6,13 +6,14 @@
 **Assumptions:**
 - Average 4 tokens per line of source code
 - Agent useful context: ~150K tokens (leave room for prompt + output)
-- Source code budget per agent: ~80K tokens ≈ 20,000 lines
+- Source code budget per agent: ~100K tokens ≈ 25,000 lines
 
 **Tier 2 chunk sizing:**
-- Target: 15,000 lines per chunk (safe margin below 20K limit)
+- Target: 25,000 lines per chunk (Sonnet handles ~100K tokens of source comfortably)
 - Minimum: 500 lines (merge smaller chunks together)
-- Maximum: 20,000 lines (split if exceeded)
-- Token estimate: 15,000 lines × 4 tokens/line = 60K tokens of source
+- Maximum: 30,000 lines (split if exceeded)
+- Token estimate: 25,000 lines × 4 tokens/line = 100K tokens of source
+- Note: larger chunks = fewer agents = significantly less system prompt overhead. The quality tradeoff is minimal — most files are straightforward. Complex large files are flagged in large_files.tsv for extra attention regardless.
 
 **Tier 3 input sizing:**
 - Each Tier 2 chunk produces ~200-500 lines of analysis
@@ -55,12 +56,12 @@ Wave 3: agents 9-12  → wait → verify
 
 | LOC | Files (est.) | Tier 2 Chunks | Tier 2 Waves | Tier 3 Domains | Total Agents | Est. Time |
 |-----|-------------|---------------|-------------|----------------|-------------|-----------|
-| 10K | ~100 | 2-3 | 1 | 3-5 | ~12 | 5 min |
-| 50K | ~400 | 5-8 | 2 | 6-10 | ~20 | 10 min |
-| 100K | ~800 | 10-15 | 3-4 | 8-12 | ~30 | 15 min |
-| 200K | ~1,500 | 15-25 | 4-7 | 10-12 | ~45 | 20 min |
-| 500K | ~3,500 | 35-60 | 9-15 | 10-12 | ~80 | 30 min |
-| 1M | ~6,000 | 70-125 | 18-32 | 10-12 | ~145 | 45 min |
+| 10K | ~100 | 1-2 | 1 | 3-5 | ~10 | 5 min |
+| 50K | ~400 | 2-4 | 1 | 6-10 | ~15 | 8 min |
+| 100K | ~800 | 4-6 | 1-2 | 8-12 | ~20 | 12 min |
+| 200K | ~1,500 | 8-12 | 2-3 | 10-12 | ~30 | 15 min |
+| 500K | ~3,500 | 20-30 | 5-8 | 10-12 | ~50 | 25 min |
+| 1M | ~6,000 | 40-50 | 10-13 | 10-12 | ~70 | 35 min |
 
 **IMPORTANT — Tier 3 domain cap: max 12 agents.**
 Each agent spawn carries ~30-50K tokens of system prompt overhead (skills list, MCP tools, CLAUDE.md, etc.) regardless of task size. With 20+ Tier 3 agents, system overhead alone can exceed 1M tokens and exhaust plan limits in minutes. Merging small domains into ≤12 composite domains cuts this overhead nearly in half with minimal quality loss — Tier 3 input is pre-digested summaries, not raw code.

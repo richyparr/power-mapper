@@ -72,11 +72,12 @@ cat .planning/audit/inventory/domain_summary.tsv
 ```
 
 **Chunking rules:**
-- Target: ~15,000 lines per chunk (≈60K tokens of source code)
-- Group files by domain (files in same feature stay together)
-- If a domain exceeds 15,000 lines, split it into sub-chunks
+- Target: ~25,000 lines per chunk (≈100K tokens of source code — well within Sonnet's context)
+- Group files by domain (files in same feature stay together). Merge small related domains into one chunk.
+- If a domain exceeds 30,000 lines, split it into sub-chunks
 - Files not assigned to any domain go into "infrastructure" or "misc" chunks
 - Each chunk must have a clear label (e.g., "billing", "messaging-part1", "config")
+- **Fewer chunks = fewer agents = major token savings.** Prefer larger chunks over more agents.
 
 **Create chunk assignment files** — one file per chunk listing all files for that chunk:
 
@@ -110,9 +111,9 @@ for f in .planning/audit/chunk-assignments/*.txt; do
 done | sort -rn
 ```
 
-**Split oversized chunks:** If any chunk exceeds 20,000 LOC, split it:
+**Split oversized chunks:** If any chunk exceeds 30,000 LOC, split it:
 ```bash
-# Split large chunk into parts of ~15000 lines each
+# Split large chunk into parts of ~25000 lines each
 split -l $(($(wc -l < chunk.txt) / 2)) chunk.txt chunk-part-
 ```
 
