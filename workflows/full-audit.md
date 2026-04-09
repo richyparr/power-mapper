@@ -706,7 +706,32 @@ Quick access:
   cat .planning/audit/SECURITY-BASELINE.md    # Security audit starting point
   cat .planning/audit/TEST-MAP.md             # E2E test planning
   cat .planning/audit/CLEANUP.md              # Dead code to remove
+```
 
+**After printing the deliverables above**, read AUDIT-SUMMARY.md and present a brief summary to the user:
+
+```
+=== Key Findings ===
+
+Health Score: {overall}/10
+  - Feature completeness: {X}/10
+  - Code quality: {X}/10
+  - Test coverage: {X}/10
+  - Security posture: {X}/10
+  - Documentation: {X}/10
+
+Top Risks:
+  1. {risk from AUDIT-SUMMARY.md}
+  2. {risk}
+  3. {risk}
+
+Recommendation: {Pick the single highest-impact action from the audit's
+recommendations section. Be specific — e.g. "Fix the 7 critical security
+issues first (hardcoded credentials, unauthenticated endpoints). This is
+blocking everything else." Not generic advice.}
+```
+
+```
 === What's Next? ===
 
 Choose how to act on these findings:
